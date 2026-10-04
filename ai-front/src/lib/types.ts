@@ -138,6 +138,43 @@ export interface Brief {
   summary: BriefSummary | null;
 }
 
+// --- Подготовка к встрече ---
+
+export interface MeetingAttendee {
+  name: string;
+  email: string;
+  self: boolean;
+  response: string; // accepted | declined | tentative | needsAction | ""
+}
+
+export interface MeetingDetail {
+  event: {
+    id: number;
+    title: string;
+    description: string;
+    location: string;
+    startAt: string;
+    endAt: string;
+    allDay: boolean;
+    htmlLink: string | null;
+    organizerEmail: string;
+    attendees: MeetingAttendee[];
+  };
+  context: {
+    emails: { id: number; subject: string; person: string; receivedAt: string | null; url: string }[];
+    tasks: {
+      id: number;
+      title: string;
+      kind: TaskKind;
+      dueDate: string | null;
+      person: string;
+      url: string | null;
+    }[];
+    files: { id: number; name: string; url: string | null }[];
+  };
+  prep: BriefSummary | null;
+}
+
 // --- Заметки ---
 
 export interface NoteSummary {

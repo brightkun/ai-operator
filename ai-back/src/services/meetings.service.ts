@@ -113,7 +113,7 @@ export const findMeetingContext = async (userId: number, event: IEventRow) => {
            LIMIT ${MAX_EMAILS}`,
           [userId, EMAIL_WINDOW_DAYS, emails, emailPatterns, wordPatterns],
         ),
-    personPatterns.length + wordPatterns.length === 0
+    personPatterns.length + wordPatterns.length + emails.length === 0
       ? Promise.resolve({ rows: [] as IMeetingTask[] })
       : pool.query<IMeetingTask>(
           `SELECT id, title, kind, due_date::text AS due_date, source_person, source_url
@@ -122,10 +122,18 @@ export const findMeetingContext = async (userId: number, event: IEventRow) => {
                  source_person ILIKE ANY($2::text[])
               OR title ILIKE ANY($3::text[])
               OR source_title ILIKE ANY($3::text[])
+              -- имена в задаче и в календаре часто расходятся («Иван» и «Иван Сидоров»): надёжнее связь по адресу исходного письма
+              OR EXISTS (
+                   SELECT 1 FROM emails se
+                   WHERE se.id = tasks.email_id AND (
+                         lower(se.from_email) = ANY($4::text[])
+                      OR EXISTS (SELECT 1 FROM unnest($5::text[]) AS a WHERE lower(se.to_text) LIKE a)
+                   )
+              )
            )
            ORDER BY due_date ASC NULLS LAST, id DESC
            LIMIT ${MAX_TASKS}`,
-          [userId, personPatterns, wordPatterns],
+          [userId, personPatterns, wordPatterns, emails, emailPatterns],
         ),
     wordPatterns.length === 0
       ? Promise.resolve({ rows: [] as IMeetingFile[] })

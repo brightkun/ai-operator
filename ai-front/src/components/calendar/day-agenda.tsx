@@ -1,4 +1,5 @@
-import { MapPin, Users } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Sparkles, Users } from "lucide-react";
 import { eventDotClass } from "@/components/calendar/event-colors";
 import { formatTime } from "@/lib/format";
 import type { CalendarEvent } from "@/lib/types";
@@ -49,19 +50,27 @@ export function DayAgenda({ date, events }: DayAgendaProps) {
             </>
           );
 
-          return event.htmlLink ? (
-            <a
-              key={event.id}
-              href={event.htmlLink}
-              target="_blank"
-              rel="noreferrer"
-              className="-mx-2 flex items-start gap-2 rounded px-2 py-1 hover:bg-ink-100"
-            >
-              {body}
-            </a>
-          ) : (
-            <div key={event.id} className="flex items-start gap-2">
-              {body}
+          return (
+            <div key={event.id}>
+              {event.htmlLink ? (
+                <a
+                  href={event.htmlLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="-mx-2 flex items-start gap-2 rounded px-2 py-1 hover:bg-ink-100"
+                >
+                  {body}
+                </a>
+              ) : (
+                <div className="flex items-start gap-2">{body}</div>
+              )}
+              <Link
+                href={`/meetings/${event.id}`}
+                className="ml-4 mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-ink-700 hover:text-ink-900 hover:underline"
+              >
+                <Sparkles className="h-3 w-3 text-accent" />
+                Подготовиться
+              </Link>
             </div>
           );
         })}

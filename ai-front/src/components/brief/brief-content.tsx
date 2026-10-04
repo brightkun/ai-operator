@@ -264,19 +264,26 @@ function EventList({ events, empty }: { events: BriefEvent[]; empty: string }) {
         );
 
         return (
-          <li key={event.id}>
+          <li key={event.id} className="flex items-center hover:bg-ink-50">
             {event.htmlLink ? (
               <a
                 href={event.htmlLink}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-ink-50"
+                className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5"
               >
                 {body}
               </a>
             ) : (
-              <div className="flex items-center gap-3 px-4 py-2.5">{body}</div>
+              <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2.5">{body}</div>
             )}
+            <Link
+              href={`/meetings/${event.id}`}
+              className="mr-3 inline-flex shrink-0 items-center gap-1 rounded-lg border border-ink-300 px-2.5 py-1 text-xs font-medium text-ink-700 hover:bg-white hover:text-ink-900"
+            >
+              <Sparkles className="h-3 w-3 text-accent" />
+              Подготовка
+            </Link>
           </li>
         );
       })}
