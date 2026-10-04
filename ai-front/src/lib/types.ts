@@ -1,3 +1,5 @@
+import type { ChatSource } from "@/store/chat-store";
+
 export type NavKey = "operator" | "gmail" | "calendar" | "drive" | "notes" | "jira";
 
 export interface NavItem {
@@ -68,6 +70,72 @@ export interface SyncResult {
   ok: boolean;
   count: number;
   error?: string;
+}
+
+export type TaskKind = "todo" | "commitment" | "waiting";
+export type TaskStatus = "open" | "done" | "dismissed";
+
+export interface Task {
+  id: number;
+  title: string;
+  kind: TaskKind;
+  dueDate: string | null; // YYYY-MM-DD
+  status: TaskStatus;
+  source: "email" | "manual";
+  sourceTitle: string;
+  sourcePerson: string;
+  sourceUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExtractResult {
+  processed: number; // писем разобрано
+  created: number; // новых задач
+  remaining: number; // писем ещё не разобрано
+}
+
+export interface BriefEvent {
+  id: number;
+  title: string;
+  location: string;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  attendeesCount: number;
+  htmlLink: string | null;
+}
+
+export interface BriefUnread {
+  id: number;
+  subject: string;
+  fromName: string;
+  fromEmail: string;
+  snippet: string;
+  receivedAt: string | null;
+  url: string;
+}
+
+export interface BriefSummary {
+  text: string;
+  sources: ChatSource[];
+  model: string;
+  generatedAt: string;
+}
+
+export interface Brief {
+  date: string;
+  timeZone: string;
+  events: { today: BriefEvent[]; tomorrow: BriefEvent[] };
+  unread: { count: number; items: BriefUnread[] };
+  tasks: {
+    overdue: Task[];
+    dueToday: Task[];
+    dueSoon: Task[];
+    waiting: Task[];
+    openCount: number;
+  };
+  summary: BriefSummary | null;
 }
 
 // --- Пока без бэкенда (заглушки) ---

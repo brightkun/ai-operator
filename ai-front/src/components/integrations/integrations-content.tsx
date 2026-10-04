@@ -95,7 +95,7 @@ export function IntegrationsContent() {
 
   const onDisconnect = () => {
     const ok = window.confirm(
-      "Отключить Google? Мы также удалим синхронизированные письма, события и файлы.",
+      "Отключить Google? Мы также удалим синхронизированные письма, события, файлы и найденные в письмах задачи (добавленные вами вручную останутся).",
     );
     if (ok) disconnect.mutate();
   };

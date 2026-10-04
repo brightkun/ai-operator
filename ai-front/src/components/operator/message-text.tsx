@@ -4,7 +4,7 @@ import type { ChatSource } from "@/store/chat-store";
 // Минимальная разметка ответа ассистента: абзацы, списки «- »/«1. », **жирный** и сноски [E12].
 // Без dangerouslySetInnerHTML: весь текст выводится как текст, React его экранирует.
 
-const INLINE = /(\*\*[^*\n]+\*\*|\[[ECF]\d+\])/g;
+const INLINE = /(\*\*[^*\n]+\*\*|\[[ECFT]\d+\])/g;
 const BULLET = /^\s*[-*•]\s+(.*)$/;
 const NUMBERED = /^\s*\d+[.)]\s+(.*)$/;
 
@@ -18,7 +18,7 @@ function Inline({ text, sources }: { text: string; sources: ChatSource[] }) {
           return <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong>;
         }
 
-        const ref = part.match(/^\[([ECF]\d+)\]$/)?.[1];
+        const ref = part.match(/^\[([ECFT]\d+)\]$/)?.[1];
         if (ref) {
           const index = sources.findIndex((s) => s.ref === ref);
           if (index === -1) return null;

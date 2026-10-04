@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export interface ChatSource {
   ref: string;
-  type: "email" | "event" | "file";
+  type: "email" | "event" | "file" | "task";
   title: string;
   subtitle: string;
   url: string | null;

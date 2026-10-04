@@ -10,6 +10,8 @@ import {
   FileText,
   LogOut,
   Plug,
+  ListChecks,
+  Sunrise,
 } from "lucide-react";
 import { LiaJira } from "react-icons/lia";
 import { useLogout } from "@/hooks/auth/useLogout";
@@ -59,6 +61,26 @@ export function Sidebar() {
           />
           AI Operator
         </Link>
+
+        {/* Что делает AI с вашими данными: сводка дня и задачи из писем */}
+        {[
+          { href: "/brief", label: "Сводка дня", Icon: Sunrise },
+          { href: "/tasks", label: "Задачи", Icon: ListChecks },
+        ].map(({ href, label, Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              pathname.startsWith(href)
+                ? "bg-ink-100 text-ink-900"
+                : "text-ink-500 hover:bg-ink-100 hover:text-ink-900",
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+          </Link>
+        ))}
 
         <div className="my-2 border-t border-ink-300" />
 
