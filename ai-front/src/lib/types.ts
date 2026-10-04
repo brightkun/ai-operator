@@ -138,14 +138,25 @@ export interface Brief {
   summary: BriefSummary | null;
 }
 
-// --- Пока без бэкенда (заглушки) ---
+// --- Заметки ---
+
+export interface NoteSummary {
+  id: number;
+  title: string;
+  excerpt: string; // начало текста для списка
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Note {
-  id: string;
+  id: number;
   title: string;
-  updatedAt: string;
   content: string;
+  createdAt: string;
+  updatedAt: string;
 }
+
+// --- Подсказки чата ---
 
 export interface Suggestion {
   id: string;

@@ -137,3 +137,18 @@ CREATE TABLE IF NOT EXISTS briefs (
   generated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, brief_date)
 );
+
+-- ---------------------------------------------------------------------------
+-- Заметки пользователя (хранятся только у нас; модели не отправляются)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS notes (
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  title       TEXT        NOT NULL DEFAULT '',
+  content     TEXT        NOT NULL DEFAULT '',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS notes_user_updated_idx ON notes (user_id, updated_at DESC);

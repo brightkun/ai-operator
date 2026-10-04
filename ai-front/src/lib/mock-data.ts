@@ -1,7 +1,6 @@
-import type { Note, Suggestion } from "@/lib/types";
+import type { Suggestion } from "@/lib/types";
 
-// Подсказки для чата (description — текст, который уходит ассистенту) и заглушка заметок.
-// Gmail, Calendar и Drive берут данные с сервера (см. hooks/data/useData.ts).
+// Подсказки для чата: description — текст, который уходит ассистенту.
 
 export const suggestions: Suggestion[] = [
   {
@@ -27,26 +26,5 @@ export const suggestions: Suggestion[] = [
     icon: "note",
     title: "Непрочитанное",
     description: "Кратко перескажи непрочитанные письма",
-  },
-];
-
-export const notes: Note[] = [
-  {
-    id: "n1",
-    title: "Футбол",
-    updatedAt: "12 сент., 10:28",
-    content: "Играть в pubg в 22:00",
-  },
-  {
-    id: "n2",
-    title: "Receipt",
-    updatedAt: "12 сент., 10:26",
-    content: "Shawarma carrot",
-  },
-  {
-    id: "n3",
-    title: "dashbdas",
-    updatedAt: "8 сент., 16:10",
-    content: "hdasbdn",
   },
 ];

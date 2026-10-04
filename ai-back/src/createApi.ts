@@ -8,6 +8,7 @@ import authRoute from "./routes/auth.route";
 import briefRoute from "./routes/brief.route";
 import dataRoute from "./routes/data.route";
 import integrationRoute from "./routes/integration.route";
+import notesRoute from "./routes/notes.route";
 import tasksRoute from "./routes/tasks.route";
 
 const createApi = () => {
@@ -19,7 +20,8 @@ const createApi = () => {
       credentials: true,
     }),
   );
-  app.use(express.json());
+  // 50 000 символов заметки по-русски (2–4 байта на символ) не влезают в стандартные 100 КБ
+  app.use(express.json({ limit: "300kb" }));
   app.use(cookieParser());
 
   app.use("/api/auth", authRoute);
@@ -27,6 +29,7 @@ const createApi = () => {
   app.use("/api/assistant", assistantRoute);
   app.use("/api/tasks", tasksRoute);
   app.use("/api/brief", briefRoute);
+  app.use("/api/notes", notesRoute);
   // последним: роутер данных висит на общем префиксе /api и требует авторизацию для всего внутри
   app.use("/api", dataRoute);
 
