@@ -9,6 +9,7 @@ import {
   HardDrive,
   FileText,
   LogOut,
+  Plug,
 } from "lucide-react";
 import { LiaJira } from "react-icons/lia";
 import { useLogout } from "@/hooks/auth/useLogout";
@@ -95,6 +96,21 @@ export function Sidebar() {
         >
           <LiaJira className="h-4 w-4" />
           Jira
+        </Link>
+
+        <div className="my-2 border-t border-ink-300" />
+
+        <Link
+          href="/integrations"
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            pathname.startsWith("/integrations")
+              ? "bg-ink-100 text-ink-900"
+              : "text-ink-500 hover:bg-ink-100 hover:text-ink-900",
+          )}
+        >
+          <Plug className="h-4 w-4" />
+          Интеграции
         </Link>
       </nav>
 

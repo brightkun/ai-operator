@@ -23,14 +23,14 @@ export const googleCallbackController = async (req: Request, res: Response) => {
   const { code, state } = req.query;
 
   if (typeof code !== "string" || typeof state !== "string") {
-    return res.redirect(`${CLIENT_URL}/gmail?error=invalid_request`);
+    return res.redirect(`${CLIENT_URL}/integrations?error=invalid_request`);
   }
 
   try {
     await handleGoogleCallbackService(code, state);
-    return res.redirect(`${CLIENT_URL}/gmail?connected=google`);
+    return res.redirect(`${CLIENT_URL}/integrations?connected=google`);
   } catch {
-    return res.redirect(`${CLIENT_URL}/gmail?error=google_auth_failed`);
+    return res.redirect(`${CLIENT_URL}/integrations?error=google_auth_failed`);
   }
 };
 

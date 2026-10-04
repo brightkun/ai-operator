@@ -119,7 +119,7 @@ function SyncBar({ resource }: { resource: GoogleResource }) {
     <div className="flex items-center gap-3 border-b border-ink-100 px-6 py-2 text-xs text-ink-500">
       <span>
         {info?.syncedAt
-          ? `Обновлено: ${formatShortDate(info.syncedAt)}`
+          ? `${info.error ? "Последняя попытка" : "Обновлено"}: ${formatShortDate(info.syncedAt)}`
           : sync.isPending
             ? "Первая синхронизация..."
             : "Ещё не синхронизировано"}
