@@ -3,8 +3,10 @@
 import { useDeferredValue, useState } from "react";
 import { Search } from "lucide-react";
 import { GoogleGate } from "@/components/integrations/google-gate";
+import { EmailAssistPanel } from "@/components/gmail/email-assist-panel";
 import { InboxList } from "@/components/gmail/inbox-list";
 import { useEmails } from "@/hooks/data/useData";
+import type { Email } from "@/lib/types";
 
 export default function GmailPage() {
   return (
@@ -19,6 +21,7 @@ function GmailContent() {
   // запрос уходит на сервер с небольшим отставанием от набора, а не на каждую букву
   const search = useDeferredValue(query.trim());
   const emails = useEmails(search);
+  const [assistEmail, setAssistEmail] = useState<Email | null>(null);
 
   return (
     <div>
@@ -39,7 +42,12 @@ function GmailContent() {
         isLoading={emails.isLoading}
         isError={emails.isError}
         searching={search.length > 0}
+        onAssist={setAssistEmail}
       />
+
+      {assistEmail && (
+        <EmailAssistPanel key={assistEmail.id} email={assistEmail} onClose={() => setAssistEmail(null)} />
+      )}
     </div>
   );
 }

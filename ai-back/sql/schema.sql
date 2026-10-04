@@ -152,3 +152,29 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 
 CREATE INDEX IF NOT EXISTS notes_user_updated_idx ON notes (user_id, updated_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Помощь AI по письмам и события использования (метрики из ТЗ)
+-- ---------------------------------------------------------------------------
+
+-- Краткое содержание письма: делаем один раз и кешируем (экономим квоту модели)
+CREATE TABLE IF NOT EXISTS email_summaries (
+  user_id       INTEGER     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  email_id      INTEGER     NOT NULL REFERENCES emails (id) ON DELETE CASCADE,
+  summary       TEXT        NOT NULL,
+  model         TEXT        NOT NULL DEFAULT '',
+  generated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, email_id)
+);
+
+-- Ключевые действия пользователя и AI для метрик: принятые черновики, завершённые AI-задачи, открытия сводки.
+-- Содержимого писем и заметок здесь нет: в meta только id и числа.
+CREATE TABLE IF NOT EXISTS usage_events (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     INTEGER     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  type        TEXT        NOT NULL,
+  meta        JSONB       NOT NULL DEFAULT '{}',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS usage_events_user_type_idx ON usage_events (user_id, type, created_at DESC);

@@ -6,9 +6,10 @@ interface InboxListProps {
   isLoading: boolean;
   isError: boolean;
   searching: boolean;
+  onAssist: (email: Email) => void;
 }
 
-export function InboxList({ emails, isLoading, isError, searching }: InboxListProps) {
+export function InboxList({ emails, isLoading, isError, searching, onAssist }: InboxListProps) {
   return (
     <div>
       <div className="px-6 pb-2 pt-4">
@@ -30,7 +31,7 @@ export function InboxList({ emails, isLoading, isError, searching }: InboxListPr
 
       <div>
         {emails?.map((email) => (
-          <EmailRow key={email.id} email={email} />
+          <EmailRow key={email.id} email={email} onAssist={onAssist} />
         ))}
       </div>
     </div>
