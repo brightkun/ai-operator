@@ -11,10 +11,11 @@ export type UsageEventType =
   | "brief_opened" // открыта сводка дня
   | "tasks_extracted" // AI нашёл задачи в письмах
   | "meeting_prep" // подготовка к встрече
-  | "weekly_review"; // недельный обзор
+  | "weekly_review" // недельный обзор
+  | "assistant_query"; // ответ ассистента в чате (meta.sources — сколько источников приложено)
 
 // События, о которых сообщает браузер (остальные пишет сервер сам)
-export const CLIENT_EVENT_TYPES = ["draft_accepted"] as const;
+export const CLIENT_EVENT_TYPES = ["draft_accepted", "brief_opened"] as const;
 
 // Запись метрики никогда не должна ломать основную функцию: ошибки глотаем, только пишем в лог
 export const recordEvent = (userId: number, type: UsageEventType, meta: Record<string, unknown> = {}) =>

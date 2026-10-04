@@ -10,6 +10,7 @@ import dataRoute from "./routes/data.route";
 import integrationRoute from "./routes/integration.route";
 import meetingsRoute from "./routes/meetings.route";
 import notesRoute from "./routes/notes.route";
+import metricsRoute from "./routes/metrics.route";
 import reviewRoute from "./routes/review.route";
 import tasksRoute from "./routes/tasks.route";
 
@@ -34,6 +35,7 @@ const createApi = () => {
   app.use("/api/notes", notesRoute);
   app.use("/api/meetings", meetingsRoute);
   app.use("/api/review", reviewRoute);
+  app.use("/api/metrics", metricsRoute);
   // последним: роутер данных висит на общем префиксе /api и требует авторизацию для всего внутри
   app.use("/api", dataRoute);
 

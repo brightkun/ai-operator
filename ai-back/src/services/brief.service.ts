@@ -14,6 +14,7 @@ import {
 } from "../utils/time";
 import { extractSources, ISource } from "./assistant.service";
 import { listEventsInLocalRangeService, localDaysRange } from "./data.service";
+import { recordEvent } from "./events.service";
 import { chatCompletion } from "./llm";
 import { ITaskRow, listTasksService } from "./tasks.service";
 
@@ -292,6 +293,7 @@ const runSummary = async (userId: number, tz: string): Promise<IBriefSummary> =>
 
   const summary: IBriefSummary = { text: answer, sources: used, model, generatedAt: new Date() };
   await upsertSummary(userId, data.today, summary);
+  void recordEvent(userId, "brief_summary", { date: data.today });
   return summary;
 };
 

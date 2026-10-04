@@ -9,6 +9,7 @@ import { z } from "zod";
 import { pool } from "../plugins/pg";
 import { apiErrors } from "../utils/apiErrors";
 import { formatLocal, isRealDateKey, localDateKey, safeTimeZone, weekdayName } from "../utils/time";
+import { recordEvent } from "./events.service";
 import { chatCompletion } from "./llm";
 import { parseFromHeader } from "./sync.service";
 
@@ -386,6 +387,8 @@ const runExtraction = async (userId: number, tz: string): Promise<IExtractResult
   } finally {
     client.release();
   }
+
+  if (created > 0) void recordEvent(userId, "tasks_extracted", { count: created });
 
   return { processed: all.length, created, remaining: await countRemaining(userId) };
 };

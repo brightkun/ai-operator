@@ -16,6 +16,7 @@ import {
   weekdayName,
 } from "../utils/time";
 import { firstRecipient, listTasksService, TaskKind } from "./tasks.service";
+import { recordEvent } from "./events.service";
 import { chatCompletion, IChatMessage, IToolCall, IToolDefinition } from "./llm";
 
 // Эти функции раньше жили здесь; тесты и другие сервисы по-прежнему импортируют их отсюда
@@ -490,9 +491,12 @@ export const assistantChatService = async (
     }
   }
 
-  if (!answer.trim()) {
+  const answered = answer.trim() !== "";
+  if (!answered) {
     answer = "Не получилось сформулировать ответ. Попробуйте переформулировать вопрос.";
   }
 
-  return extractSources(answer, sources);
+  const result = extractSources(answer, sources);
+  if (answered) void recordEvent(userId, "assistant_query", { sources: result.sources.length });
+  return result;
 };

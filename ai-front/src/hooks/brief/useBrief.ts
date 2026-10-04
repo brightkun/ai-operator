@@ -5,6 +5,11 @@ import { api } from "../api/api";
 
 const timeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+// Метрика «открытие сводки дня» (ТЗ): один раз за заход на страницу. Сбой метрики не показываем.
+export const reportBriefOpened = () => {
+  api.post("/events", { type: "brief_opened" }).catch(() => {});
+};
+
 export const useBrief = () => {
   const auth = useAuthStore((state) => state.status);
 

@@ -10,6 +10,7 @@ import {
   FileText,
   LogOut,
   Plug,
+  BarChart3,
   CalendarCheck,
   ListChecks,
   Sunrise,
@@ -68,6 +69,7 @@ export function Sidebar() {
           { href: "/brief", label: "Сводка дня", Icon: Sunrise },
           { href: "/tasks", label: "Задачи", Icon: ListChecks },
           { href: "/review", label: "Недельный обзор", Icon: CalendarCheck },
+          { href: "/stats", label: "Эффективность", Icon: BarChart3 },
         ].map(({ href, label, Icon }) => (
           <Link
             key={href}

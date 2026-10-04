@@ -7,7 +7,7 @@ import { MapPin, RefreshCw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MessageText } from "@/components/operator/message-text";
 import { Sources } from "@/components/operator/sources";
-import { useBrief, useGenerateBriefSummary } from "@/hooks/brief/useBrief";
+import { reportBriefOpened, useBrief, useGenerateBriefSummary } from "@/hooks/brief/useBrief";
 import { useGoogleStatus } from "@/hooks/integrations/useGoogle";
 import { useUpdateTask } from "@/hooks/tasks/useTasks";
 import { formatShortDate, formatTime } from "@/lib/format";
@@ -34,6 +34,13 @@ export function BriefContent() {
   const googleStatus = useGoogleStatus();
   const update = useUpdateTask();
   const autoRequested = useRef(false);
+  const openReported = useRef(false);
+
+  useEffect(() => {
+    if (openReported.current) return;
+    openReported.current = true;
+    reportBriefOpened();
+  }, []);
 
   const brief = briefQuery.data;
   const hasData =

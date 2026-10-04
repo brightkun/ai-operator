@@ -138,6 +138,43 @@ export interface Brief {
   summary: BriefSummary | null;
 }
 
+// --- Метрики ---
+
+export interface MetricsPeriod {
+  from: string;
+  to: string;
+  aiActions: number;
+  aiTasksDone: number;
+  draftsAccepted: number;
+  draftsGenerated: number;
+  draftAcceptanceRate: number | null;
+  tasksSuggested: number;
+  tasksKept: number;
+  suggestionAcceptanceRate: number | null;
+  commitmentsDetected: number;
+  commitmentsCompleted: number;
+  briefOpenDays: number;
+  briefOpenRate: number;
+  assistantAnswers: number;
+  assistantAnswersWithSources: number;
+  emailSummaries: number;
+  meetingPreps: number;
+  hoursSaved: number;
+}
+
+export interface Metrics {
+  timeZone: string;
+  current: MetricsPeriod;
+  previous: MetricsPeriod;
+  minutesSaved: {
+    emailSummary: number;
+    draftAccepted: number;
+    meetingPrep: number;
+    assistantAnswer: number;
+    taskFound: number;
+  };
+}
+
 // --- Недельный обзор ---
 
 export interface ReviewData {
