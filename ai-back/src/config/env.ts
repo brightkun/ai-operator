@@ -30,6 +30,9 @@ export const config = {
   googleRedirectUri: `${serverUrl}/api/integrations/google/callback`,
   // secure-кука работает только по https, поэтому включаем её в проде
   cookieSecure: process.env.NODE_ENV === "production",
+  // Как часто фоновая синхронизация обновляет письма/календарь/файлы (минуты); 0 — выключить
+  syncIntervalMinutes:
+    process.env.SYNC_INTERVAL_MINUTES !== undefined ? Number(process.env.SYNC_INTERVAL_MINUTES) : 30,
   // Любой OpenAI-совместимый chat completions API. По умолчанию — бесплатный тариф Gemini.
   // Ключ (LLM_API_KEY) читается лениво в services/llm.ts: без него сервер стартует, не работает только чат.
   llm: {
