@@ -97,3 +97,43 @@ CREATE TABLE IF NOT EXISTS sync_state (
   error      TEXT,
   PRIMARY KEY (user_id, resource)
 );
+
+-- ---------------------------------------------------------------------------
+-- Задачи из писем и сводка дня (см. services/tasks.service.ts, services/brief.service.ts)
+-- ---------------------------------------------------------------------------
+
+-- кому адресовано письмо (нужно для «жду ответа» по отправленным) и когда из него искали задачи
+ALTER TABLE emails ADD COLUMN IF NOT EXISTS to_text TEXT NOT NULL DEFAULT '';
+ALTER TABLE emails ADD COLUMN IF NOT EXISTS tasks_extracted_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id             SERIAL PRIMARY KEY,
+  user_id        INTEGER     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  email_id       INTEGER     REFERENCES emails (id) ON DELETE SET NULL,
+  title          TEXT        NOT NULL,
+  -- todo: надо сделать мне; commitment: я пообещал; waiting: жду ответа/действия от другого
+  kind           TEXT        NOT NULL CHECK (kind IN ('todo', 'commitment', 'waiting')),
+  due_date       DATE,
+  status         TEXT        NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done', 'dismissed')),
+  source         TEXT        NOT NULL DEFAULT 'email' CHECK (source IN ('email', 'manual')),
+  -- данные письма копируем: задача должна быть понятна, даже если письма уже нет в кеше
+  source_title   TEXT        NOT NULL DEFAULT '',
+  source_person  TEXT        NOT NULL DEFAULT '',
+  source_url     TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, email_id, title)
+);
+
+CREATE INDEX IF NOT EXISTS tasks_user_status_due_idx ON tasks (user_id, status, due_date);
+
+-- Текст сводки дня: по одной на пользователя и локальную дату (остальное в сводке считается на лету)
+CREATE TABLE IF NOT EXISTS briefs (
+  user_id       INTEGER     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  brief_date    DATE        NOT NULL,
+  summary       TEXT        NOT NULL,
+  sources       JSONB       NOT NULL DEFAULT '[]',
+  model         TEXT        NOT NULL DEFAULT '',
+  generated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, brief_date)
+);

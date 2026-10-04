@@ -162,6 +162,9 @@ export const disconnectGoogleService = async (userId: number) => {
   await pool.query(`DELETE FROM emails WHERE user_id = $1`, [userId]);
   await pool.query(`DELETE FROM calendar_events WHERE user_id = $1`, [userId]);
   await pool.query(`DELETE FROM drive_files WHERE user_id = $1`, [userId]);
+  // задачи, найденные в письмах, и сводки тоже производные от почты: удаляем. Ручные задачи остаются.
+  await pool.query(`DELETE FROM tasks WHERE user_id = $1 AND source = 'email'`, [userId]);
+  await pool.query(`DELETE FROM briefs WHERE user_id = $1`, [userId]);
   await pool.query(`DELETE FROM sync_state WHERE user_id = $1`, [userId]);
   await pool.query(
     `DELETE FROM integrations WHERE user_id = $1 AND provider = 'google'`,

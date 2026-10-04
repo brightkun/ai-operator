@@ -11,7 +11,8 @@ import {
   IIntegration,
 } from "./googleIntegration.service";
 
-const GMAIL_LIMIT = 50;
+const GMAIL_LIMIT = 50; // последние письма во входящих
+const GMAIL_SENT_LIMIT = 30; // и последние отправленные: из них берём обещания и «жду ответа»
 const GMAIL_CHUNK = 10; // сколько писем запрашиваем у Gmail параллельно
 const CALENDAR_DAYS_BACK = 30;
 const CALENDAR_DAYS_FORWARD = 90;
@@ -29,6 +30,7 @@ export interface IEmailRow {
   subject: string;
   fromName: string;
   fromEmail: string;
+  toText: string; // заголовок To как есть (у отправленных — кому писали)
   snippet: string;
   receivedAt: Date | null;
   isRead: boolean;
@@ -72,6 +74,7 @@ export const mapGmailMessage = (
     subject: header("Subject"),
     fromName: from.name,
     fromEmail: from.email,
+    toText: header("To").slice(0, 300),
     snippet: message.snippet ?? "",
     receivedAt: Number.isFinite(internalDate) ? new Date(internalDate) : null,
     isRead: !labels.includes("UNREAD"),
@@ -162,12 +165,12 @@ export const mapDriveFile = (file: drive_v3.Schema$File): IFileRow | null => {
 export const saveEmails = async (userId: number, rows: IEmailRow[]) => {
   for (const r of rows) {
     await pool.query(
-      `INSERT INTO emails (user_id, gmail_id, thread_id, subject, from_name, from_email, snippet, received_at, is_read, is_starred, labels, synced_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now())
+      `INSERT INTO emails (user_id, gmail_id, thread_id, subject, from_name, from_email, to_text, snippet, received_at, is_read, is_starred, labels, synced_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
        ON CONFLICT (user_id, gmail_id) DO UPDATE SET
          thread_id = EXCLUDED.thread_id, subject = EXCLUDED.subject,
          from_name = EXCLUDED.from_name, from_email = EXCLUDED.from_email,
-         snippet = EXCLUDED.snippet, received_at = EXCLUDED.received_at,
+         to_text = EXCLUDED.to_text, snippet = EXCLUDED.snippet, received_at = EXCLUDED.received_at,
          is_read = EXCLUDED.is_read, is_starred = EXCLUDED.is_starred,
          labels = EXCLUDED.labels, synced_at = now()`,
       [
@@ -177,6 +180,7 @@ export const saveEmails = async (userId: number, rows: IEmailRow[]) => {
         r.subject,
         r.fromName,
         r.fromEmail,
+        r.toText,
         r.snippet,
         r.receivedAt,
         r.isRead,
@@ -269,12 +273,21 @@ type Auth = Awaited<ReturnType<typeof getAuthorizedClient>>;
 const syncGmail = async (userId: number, auth: Auth) => {
   const gmail = google.gmail({ version: "v1", auth });
 
-  const list = await gmail.users.messages.list({
-    userId: "me",
-    labelIds: ["INBOX"],
-    maxResults: GMAIL_LIMIT,
-  });
-  const ids = (list.data.messages ?? []).flatMap((m) => (m.id ? [m.id] : []));
+  const listIds = async (labelId: string, maxResults: number) => {
+    const list = await gmail.users.messages.list({
+      userId: "me",
+      labelIds: [labelId],
+      maxResults,
+    });
+    return (list.data.messages ?? []).flatMap((m) => (m.id ? [m.id] : []));
+  };
+
+  const ids = [
+    ...new Set([
+      ...(await listIds("INBOX", GMAIL_LIMIT)),
+      ...(await listIds("SENT", GMAIL_SENT_LIMIT)),
+    ]),
+  ];
 
   const rows: IEmailRow[] = [];
 
@@ -286,7 +299,7 @@ const syncGmail = async (userId: number, auth: Auth) => {
           userId: "me",
           id,
           format: "metadata",
-          metadataHeaders: ["Subject", "From", "Date"],
+          metadataHeaders: ["Subject", "From", "To", "Date"],
         }),
       ),
     );

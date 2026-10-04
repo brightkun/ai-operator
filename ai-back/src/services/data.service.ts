@@ -1,6 +1,7 @@
 // Чтение синхронизированных данных из наших таблиц. В Google отсюда не ходим.
 
 import { pool } from "../plugins/pg";
+import { addDaysToKey, parseUserDate } from "../utils/time";
 
 // % и _ в пользовательском поиске должны искаться как обычные символы, а не как маски LIKE
 export const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
@@ -20,6 +21,7 @@ export const listEmailsService = async (
             snippet, received_at AS "receivedAt", is_read AS "isRead", is_starred AS "isStarred"
      FROM emails
      WHERE user_id = $1
+       AND 'INBOX' = ANY(labels)
        AND ($2::text IS NULL OR subject ILIKE '%' || $2 || '%'
             OR from_name ILIKE '%' || $2 || '%' OR from_email ILIKE '%' || $2 || '%'
             OR snippet ILIKE '%' || $2 || '%')
@@ -67,6 +69,47 @@ export const listDriveFilesService = async (
      ORDER BY is_folder DESC, modified_at DESC NULLS LAST
      LIMIT 300`,
     [userId, search ? escapeLike(search) : null],
+  );
+
+  return result.rows;
+};
+
+// События, попадающие в диапазон календарных дат ПОЛЬЗОВАТЕЛЯ [fromKey, toKey), ключи вида "2026-10-04".
+// Обычные события сравниваем по моментам времени, а события «на весь день» — по датам: они хранятся
+// как полночь UTC, и по моментам попадали бы в соседние дни (вчерашние в зонах восточнее UTC,
+// завтрашние — западнее).
+export interface ILocalRange {
+  from: Date; // начало периода (момент)
+  to: Date; // конец периода, не включительно (момент)
+  fromKey: string; // первая календарная дата периода
+  toKey: string; // календарная дата после последнего дня периода
+}
+
+// Целые сутки пользователя [dayKey, dayKey + days)
+export const localDaysRange = (dayKey: string, days: number, tz: string): ILocalRange => {
+  const toKey = addDaysToKey(dayKey, days);
+  return {
+    from: parseUserDate(dayKey, tz)!,
+    to: parseUserDate(toKey, tz)!,
+    fromKey: dayKey,
+    toKey,
+  };
+};
+
+export const listEventsInLocalRangeService = async (userId: number, range: ILocalRange) => {
+  const { from, to, fromKey, toKey } = range;
+
+  const result = await pool.query(
+    `SELECT id, title, location, start_at, end_at, all_day, attendees_count, html_link
+     FROM calendar_events
+     WHERE user_id = $1 AND (
+       (NOT all_day AND end_at > $2 AND start_at < $3)
+       OR (all_day AND (start_at AT TIME ZONE 'UTC')::date < $5::date
+                   AND (end_at AT TIME ZONE 'UTC')::date > $4::date)
+     )
+     ORDER BY all_day DESC, start_at ASC
+     LIMIT 100`,
+    [userId, from, to, fromKey, toKey],
   );
 
   return result.rows;
