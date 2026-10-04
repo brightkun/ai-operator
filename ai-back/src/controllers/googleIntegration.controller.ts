@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { config } from "../config/env";
+import { recordAudit } from "../services/audit.service";
 import {
   disconnectGoogleService,
   getGoogleAuthUrlService,
@@ -27,7 +28,8 @@ export const googleCallbackController = async (req: Request, res: Response) => {
   }
 
   try {
-    await handleGoogleCallbackService(code, state);
+    const userId = await handleGoogleCallbackService(code, state);
+    void recordAudit(userId, "google_connected", req);
     return res.redirect(`${CLIENT_URL}/integrations?connected=google`);
   } catch {
     return res.redirect(`${CLIENT_URL}/integrations?error=google_auth_failed`);
@@ -43,6 +45,7 @@ export const statusController = async (req: Request, res: Response) => {
 // DELETE /api/integrations/google — отключить Gmail
 export const disconnectController = async (req: Request, res: Response) => {
   await disconnectGoogleService(req.userId);
+  void recordAudit(req.userId, "google_disconnected", req);
   return res.status(200).json({ message: "Gmail отключён" });
 };
 

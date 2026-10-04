@@ -211,3 +211,24 @@ CREATE TABLE IF NOT EXISTS reviews (
   generated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, week_end)
 );
+
+-- ---------------------------------------------------------------------------
+-- Безопасность: журнал событий аккаунта и срок хранения синхронизированных данных
+-- ---------------------------------------------------------------------------
+
+-- Журнал важных действий (вход, смена пароля, подключение Google, удаление данных). Тексты писем и заметок сюда не попадают.
+-- user_id остаётся пустым, если пользователя уже нет (удалён аккаунт) или это неудачный вход в несуществующий аккаунт.
+CREATE TABLE IF NOT EXISTS audit_log (
+  id          BIGSERIAL PRIMARY KEY,
+  user_id     INTEGER     REFERENCES users (id) ON DELETE SET NULL,
+  action      TEXT        NOT NULL,
+  ip          TEXT        NOT NULL DEFAULT '',
+  user_agent  TEXT        NOT NULL DEFAULT '',
+  meta        JSONB       NOT NULL DEFAULT '{}',
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS audit_log_user_idx ON audit_log (user_id, created_at DESC);
+
+-- Сколько дней хранить письма и прошедшие события календаря из Google (NULL — без ограничения)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS retention_days INTEGER CHECK (retention_days IS NULL OR retention_days > 0);

@@ -3,6 +3,7 @@
 
 import { config } from "../config/env";
 import { pool } from "../plugins/pg";
+import { applyRetentionService } from "./retention.service";
 import { ISyncResult, syncAllService } from "./sync.service";
 
 const FIRST_RUN_DELAY_MS = 90_000; // не синхронизируем в первую минуту: dev-сервер часто перезапускается
@@ -117,7 +118,14 @@ export const startScheduler = () => {
 
   const intervalMs = minutes * 60_000;
   const tick = () =>
-    runScheduledSync(intervalMs)
+    applyRetentionService()
+      .then((purged) => {
+        if (purged.emails + purged.events > 0) {
+          console.log(`Срок хранения: удалено писем ${purged.emails}, событий ${purged.events}`);
+        }
+      })
+      .catch((error) => console.error("Очистка по сроку хранения упала:", error))
+      .then(() => runScheduledSync(intervalMs))
       .then((s) => {
         if (s.synced || s.failed) {
           console.log(`Фоновая синхронизация: обновлено ${s.synced}, пропущено ${s.skipped}, ошибок ${s.failed}`);

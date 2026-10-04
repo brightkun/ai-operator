@@ -10,6 +10,7 @@ import {
   FileText,
   LogOut,
   Plug,
+  ShieldCheck,
   BarChart3,
   CalendarCheck,
   ListChecks,
@@ -137,6 +138,19 @@ export function Sidebar() {
         >
           <Plug className="h-4 w-4" />
           Интеграции
+        </Link>
+
+        <Link
+          href="/security"
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+            pathname.startsWith("/security")
+              ? "bg-ink-100 text-ink-900"
+              : "text-ink-500 hover:bg-ink-100 hover:text-ink-900",
+          )}
+        >
+          <ShieldCheck className="h-4 w-4" />
+          Безопасность
         </Link>
       </nav>
 

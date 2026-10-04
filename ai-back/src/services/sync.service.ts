@@ -6,6 +6,7 @@ import { calendar_v3, drive_v3, gmail_v1, google } from "googleapis";
 import { GoogleResource, hasScope } from "../config/googleScopes";
 import { pool } from "../plugins/pg";
 import { apiErrors } from "../utils/apiErrors";
+import { retentionCutoff } from "./retention.service";
 import {
   getAuthorizedClient,
   IIntegration,
@@ -184,7 +185,11 @@ export const mapDriveFile = (file: drive_v3.Schema$File): IFileRow | null => {
 // Сохранение в БД (отдельно от запросов к Google, чтобы это можно было проверять без сети)
 // ---------------------------------------------------------------------------
 
-export const saveEmails = async (userId: number, rows: IEmailRow[]) => {
+export const saveEmails = async (userId: number, allRows: IEmailRow[]) => {
+  // срок хранения, выбранный пользователем: письма старше него обратно не загружаем
+  const cutoff = await retentionCutoff(userId);
+  const rows = cutoff ? allRows.filter((r) => !r.receivedAt || r.receivedAt >= cutoff) : allRows;
+
   for (const r of rows) {
     await pool.query(
       `INSERT INTO emails (user_id, gmail_id, thread_id, subject, from_name, from_email, to_text, snippet, received_at, is_read, is_starred, labels, synced_at)
@@ -215,10 +220,13 @@ export const saveEmails = async (userId: number, rows: IEmailRow[]) => {
 
 export const saveEvents = async (
   userId: number,
-  rows: IEventRow[],
+  allRows: IEventRow[],
   timeMin: Date,
   timeMax: Date,
 ) => {
+  const cutoff = await retentionCutoff(userId);
+  const rows = cutoff ? allRows.filter((r) => r.endAt >= cutoff) : allRows;
+
   for (const r of rows) {
     await pool.query(
       `INSERT INTO calendar_events (user_id, google_event_id, title, description, location, start_at, end_at, all_day, attendees_count, attendees, organizer_email, html_link, synced_at)

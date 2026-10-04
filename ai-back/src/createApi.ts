@@ -4,6 +4,7 @@ import express from "express";
 import { config } from "./config/env";
 import { errorHandler } from "./middlewares/errorHandler";
 import { securityHeaders } from "./middlewares/securityHeaders";
+import accountRoute from "./routes/account.route";
 import assistantRoute from "./routes/assistant.route";
 import authRoute from "./routes/auth.route";
 import briefRoute from "./routes/brief.route";
@@ -42,6 +43,7 @@ const createApi = () => {
   app.use("/api/meetings", meetingsRoute);
   app.use("/api/review", reviewRoute);
   app.use("/api/metrics", metricsRoute);
+  app.use("/api/account", accountRoute);
   // последним: роутер данных висит на общем префиксе /api и требует авторизацию для всего внутри
   app.use("/api", dataRoute);
 

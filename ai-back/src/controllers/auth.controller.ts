@@ -3,6 +3,7 @@
 
 import { CookieOptions, Request, Response } from "express";
 import { config } from "../config/env";
+import { findUserIdByEmail, recordAudit } from "../services/audit.service";
 import {
   forgotPasswordService,
   getProfileService,
@@ -45,6 +46,7 @@ export const registerController = async (req: Request, res: Response) => {
   );
 
   // refresh-токен уходит в httpOnly-куку, access-токен — в теле ответа (фронт хранит его в памяти)
+  void recordAudit(user.id, "register", req);
   res.cookie(REFRESH_COOKIE, refreshToken, REFRESH_COOKIE_OPTIONS);
   return res.status(201).json({ user, accessToken });
 };
@@ -53,10 +55,16 @@ export const registerController = async (req: Request, res: Response) => {
 export const loginController = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  const { user, accessToken, refreshToken } = await loginService(
-    email,
-    password,
-  );
+  let session;
+  try {
+    session = await loginService(email, password);
+  } catch (error) {
+    // неудачные попытки видно в журнале аккаунта (само введённое значение не сохраняем)
+    void findUserIdByEmail(email).then((id) => (id ? recordAudit(id, "login_failed", req) : undefined));
+    throw error;
+  }
+  const { user, accessToken, refreshToken } = session;
+  void recordAudit(user.id, "login", req);
 
   res.cookie(REFRESH_COOKIE, refreshToken, REFRESH_COOKIE_OPTIONS);
   return res.status(200).json({ user, accessToken });
@@ -77,7 +85,8 @@ export const refreshController = async (req: Request, res: Response) => {
 export const logoutController = async (req: Request, res: Response) => {
   const token = req.cookies[REFRESH_COOKIE];
 
-  await logoutService(token);
+  const userId = await logoutService(token);
+  if (userId) void recordAudit(userId, "logout", req);
   res.clearCookie(REFRESH_COOKIE, REFRESH_COOKIE_OPTIONS);
   return res.status(200).json({ message: "Вы вышли из аккаунта" });
 };
@@ -94,6 +103,7 @@ export const googleLoginController = async (req: Request, res: Response) => {
   const { idToken } = req.body;
 
   const { user, accessToken, refreshToken } = await googleLoginService(idToken);
+  void recordAudit(user.id, "google_login", req);
 
   res.cookie(REFRESH_COOKIE, refreshToken, REFRESH_COOKIE_OPTIONS);
   return res.status(200).json({ user, accessToken });
@@ -103,7 +113,8 @@ export const googleLoginController = async (req: Request, res: Response) => {
 export const forgotPasswordController = async (req: Request, res: Response) => {
   const { email } = req.body;
 
-  await forgotPasswordService(email);
+  const requestedBy = await forgotPasswordService(email);
+  if (requestedBy) void recordAudit(requestedBy, "password_reset_requested", req);
 
   return res
     .status(200)
@@ -117,7 +128,8 @@ export const forgotPasswordController = async (req: Request, res: Response) => {
 export const resetPasswordController = async (req: Request, res: Response) => {
   const { token, password } = req.body;
 
-  await resetPasswordService(token, password);
+  const resetUserId = await resetPasswordService(token, password);
+  void recordAudit(resetUserId, "password_reset", req);
 
   return res.status(200).json({ message: "Пароль успешно изменён" });
 };

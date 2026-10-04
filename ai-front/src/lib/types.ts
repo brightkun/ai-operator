@@ -268,3 +268,35 @@ export interface Suggestion {
   title: string;
   description: string;
 }
+
+// --- Безопасность и данные аккаунта ---
+
+export interface Account {
+  email: string;
+  hasPassword: boolean;
+  retentionDays: number | null;
+  retentionOptions: number[];
+}
+
+export type AuditAction =
+  | "register"
+  | "login"
+  | "login_failed"
+  | "google_login"
+  | "logout"
+  | "password_reset_requested"
+  | "password_reset"
+  | "google_connected"
+  | "google_disconnected"
+  | "retention_changed"
+  | "data_purged"
+  | "account_deleted";
+
+export interface AuditEntry {
+  id: number;
+  action: AuditAction;
+  ip: string;
+  userAgent: string;
+  meta: Record<string, unknown>;
+  createdAt: string;
+}

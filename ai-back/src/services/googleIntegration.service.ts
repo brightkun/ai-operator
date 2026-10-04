@@ -93,6 +93,8 @@ export const handleGoogleCallbackService = async (
       data.email || null,
     ],
   );
+
+  return userId;
 };
 
 // Подключён ли Gmail у пользователя и к какому ящику

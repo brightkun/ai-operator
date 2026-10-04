@@ -146,9 +146,9 @@ export const refreshService = async (token: string | undefined) => {
 
 // Логаут: затираем refresh_token в БД, чтобы старый refresh-токен больше не работал.
 // Если токена нет/он невалиден — просто молча выходим (тут нечего инвалидировать)
-export const logoutService = async (token: string | undefined) => {
+export const logoutService = async (token: string | undefined): Promise<number | null> => {
   if (!token) {
-    return;
+    return null;
   }
 
   try {
@@ -156,8 +156,9 @@ export const logoutService = async (token: string | undefined) => {
     await pool.query(`UPDATE users SET refresh_token = NULL WHERE id = $1`, [
       payload.userId,
     ]);
+    return payload.userId;
   } catch {
-    return;
+    return null;
   }
 };
 
@@ -250,7 +251,7 @@ export const forgotPasswordService = async (email: string) => {
   // если пользователя нет — молча выходим: ответ одинаковый в обоих случаях,
   // чтобы нельзя было перебором выяснить, какие email зарегистрированы
   if (!user) {
-    return;
+    return null;
   }
 
   const resetToken = crypto.randomBytes(32).toString("hex");
@@ -263,6 +264,7 @@ export const forgotPasswordService = async (email: string) => {
 
   // на почту уходит сам токен, в БД остаётся только его хэш
   await sendResetPasswordEmail(user.email, resetToken);
+  return user.id;
 };
 
 // Шаг 2 восстановления пароля: пользователь переходит по ссылке из письма и вводит новый пароль.
@@ -291,4 +293,6 @@ export const resetPasswordService = async (
     `UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL, refresh_token = NULL WHERE id = $2`,
     [hashedPassword, user.id],
   );
+
+  return user.id;
 };
