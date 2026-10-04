@@ -4,6 +4,7 @@ import express from "express";
 import { config } from "./config/env";
 import { errorHandler } from "./middlewares/errorHandler";
 import authRoute from "./routes/auth.route";
+import dataRoute from "./routes/data.route";
 import integrationRoute from "./routes/integration.route";
 
 const createApi = () => {
@@ -20,6 +21,7 @@ const createApi = () => {
 
   app.use("/api/auth", authRoute);
   app.use("/api/integrations", integrationRoute);
+  app.use("/api", dataRoute);
 
   app.use(errorHandler);
 

@@ -4,6 +4,7 @@
 
 import { google } from "googleapis";
 import { config } from "../config/env";
+import { GOOGLE_SCOPES, hasScope } from "../config/googleScopes";
 import { pool } from "../plugins/pg";
 import { apiErrors } from "../utils/apiErrors";
 import { generateOAuthState, verifyOAuthState } from "../utils/jwt";
@@ -14,13 +15,7 @@ const GOOGLE_CLIENT_ID = config.googleClientId;
 const GOOGLE_CLIENT_SECRET = config.googleClientSecret;
 const GOOGLE_REDIRECT_URI = config.googleRedirectUri;
 
-// gmail.readonly достаточно, чтобы читать письма; userinfo.email — чтобы узнать, какой именно ящик подключили
-const GMAIL_SCOPES = [
-  "https://www.googleapis.com/auth/gmail.readonly",
-  "https://www.googleapis.com/auth/userinfo.email",
-];
-
-interface IIntegration {
+export interface IIntegration {
   id: number;
   user_id: number;
   provider: string;
@@ -32,7 +27,7 @@ interface IIntegration {
   created_at: Date;
 }
 
-const createOAuthClient = () => {
+export const createOAuthClient = () => {
   return new google.auth.OAuth2(
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
@@ -51,7 +46,8 @@ export const getGoogleAuthUrlService = (userId: number) => {
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
-    scope: GMAIL_SCOPES,
+    include_granted_scopes: true,
+    scope: GOOGLE_SCOPES,
     state,
   });
 };
@@ -110,11 +106,37 @@ export const getIntegrationStatusService = async (userId: number) => {
     return { connected: false as const };
   }
 
+  const syncs = await pool.query<{
+    resource: string;
+    synced_at: Date | null;
+    item_count: number;
+    error: string | null;
+  }>(
+    `SELECT resource, synced_at, item_count, error FROM sync_state WHERE user_id = $1`,
+    [userId],
+  );
+
   return {
     connected: true as const,
     email: integration.google_email,
-    scope: integration.scope,
     connectedAt: integration.created_at,
+    // каких прав не хватает (например, подключали до появления Calendar/Drive) —
+    // фронт по этому предлагает переподключить Google
+    access: {
+      gmail: hasScope(integration.scope, "gmail"),
+      calendar: hasScope(integration.scope, "calendar"),
+      drive: hasScope(integration.scope, "drive"),
+    },
+    sync: Object.fromEntries(
+      syncs.rows.map((row) => [
+        row.resource,
+        {
+          syncedAt: row.synced_at,
+          itemCount: row.item_count,
+          error: row.error,
+        },
+      ]),
+    ),
   };
 };
 
@@ -136,6 +158,11 @@ export const disconnectGoogleService = async (userId: number) => {
     // токен мог уже истечь/быть отозванным вручную в Google — это не мешает удалить запись
   }
 
+  // вместе с доступом удаляем и всё, что мы синхронизировали из Google для этого пользователя
+  await pool.query(`DELETE FROM emails WHERE user_id = $1`, [userId]);
+  await pool.query(`DELETE FROM calendar_events WHERE user_id = $1`, [userId]);
+  await pool.query(`DELETE FROM drive_files WHERE user_id = $1`, [userId]);
+  await pool.query(`DELETE FROM sync_state WHERE user_id = $1`, [userId]);
   await pool.query(
     `DELETE FROM integrations WHERE user_id = $1 AND provider = 'google'`,
     [userId],
@@ -144,7 +171,7 @@ export const disconnectGoogleService = async (userId: number) => {
 
 // Собираем авторизованный OAuth-клиент по сохранённым токенам пользователя.
 // Если Google по ходу дела сам обновит access_token — сразу сохраняем новый в БД.
-const getAuthorizedClient = async (userId: number) => {
+export const getAuthorizedClient = async (userId: number) => {
   const result = await pool.query<IIntegration>(
     `SELECT * FROM integrations WHERE user_id = $1 AND provider = 'google'`,
     [userId],
@@ -152,21 +179,28 @@ const getAuthorizedClient = async (userId: number) => {
   const integration = result.rows[0];
 
   if (!integration) {
-    throw apiErrors.notFound("Gmail не подключён");
+    throw apiErrors.notFound("Google не подключён");
   }
 
   const oauth2Client = createOAuthClient();
   oauth2Client.setCredentials({
     access_token: integration.access_token,
     refresh_token: integration.refresh_token,
+    expiry_date: integration.token_expiry
+      ? integration.token_expiry.getTime()
+      : null,
   });
 
   oauth2Client.on("tokens", (tokens) => {
     if (tokens.access_token) {
       pool
         .query(
-          `UPDATE integrations SET access_token = $1 WHERE user_id = $2 AND provider = 'google'`,
-          [tokens.access_token, userId],
+          `UPDATE integrations SET access_token = $1, token_expiry = $2 WHERE user_id = $3 AND provider = 'google'`,
+          [
+            tokens.access_token,
+            tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+            userId,
+          ],
         )
         .catch(() => {});
     }
