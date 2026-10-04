@@ -6,43 +6,71 @@ export interface NavItem {
   href: string;
 }
 
+// --- Данные из бэкенда (даты приходят строками ISO) ---
+
 export interface Email {
-  id: string;
-  sender: string;
+  id: number;
+  gmailId: string;
   subject: string;
-  preview: string;
-  read: boolean;
-  starred: boolean;
+  fromName: string;
+  fromEmail: string;
+  snippet: string;
+  receivedAt: string | null;
+  isRead: boolean;
+  isStarred: boolean;
 }
 
 export interface CalendarEvent {
-  id: string;
+  id: number;
+  googleEventId: string;
   title: string;
-  time: string;
-  color: "blue" | "purple" | "orange" | "green" | "red";
-}
-
-export interface CalendarDay {
-  date: number;
-  inCurrentMonth: boolean;
-  isToday?: boolean;
-  events: CalendarEvent[];
-}
-
-export interface DriveFolder {
-  id: string;
-  name: string;
+  description: string;
+  location: string;
+  startAt: string;
+  endAt: string;
+  allDay: boolean;
+  attendeesCount: number;
+  htmlLink: string | null;
 }
 
 export interface DriveFile {
-  id: string;
+  id: number;
+  googleFileId: string;
   name: string;
-  owner: string;
-  modified: string;
-  size: string;
-  starred?: boolean;
-  kind: "pdf" | "doc" | "sheet";
+  mimeType: string;
+  isFolder: boolean;
+  ownerName: string;
+  modifiedAt: string | null;
+  sizeBytes: number | null;
+  isStarred: boolean;
+  webViewLink: string | null;
 }
+
+export type GoogleResource = "gmail" | "calendar" | "drive";
+
+export interface SyncInfo {
+  syncedAt: string | null;
+  itemCount: number;
+  error: string | null;
+}
+
+export type GoogleStatus =
+  | { connected: false }
+  | {
+      connected: true;
+      email: string | null;
+      connectedAt: string;
+      access: Record<GoogleResource, boolean>;
+      sync: Partial<Record<GoogleResource, SyncInfo>>;
+    };
+
+export interface SyncResult {
+  ok: boolean;
+  count: number;
+  error?: string;
+}
+
+// --- Пока без бэкенда (заглушки) ---
 
 export interface Note {
   id: string;

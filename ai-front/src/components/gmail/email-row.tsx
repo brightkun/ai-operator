@@ -1,19 +1,51 @@
 import { Star } from "lucide-react";
 import type { Email } from "@/lib/types";
+import { formatShortDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+// Клик открывает письмо в самом Gmail: здесь мы только читаем
 export function EmailRow({ email }: { email: Email }) {
   return (
-    <div className="flex cursor-pointer items-start gap-3 border-b border-ink-100 px-6 py-4 hover:bg-ink-100">
-      <input type="checkbox" className="mt-1 h-4 w-4 rounded border-ink-300" />
-      <button type="button" aria-label="Star email" className="mt-1 text-ink-300 hover:text-accent">
-        <Star className={cn("h-4 w-4", email.starred && "fill-accent text-accent")} />
-      </button>
+    <a
+      href={`https://mail.google.com/mail/u/0/#inbox/${email.gmailId}`}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-start gap-3 border-b border-ink-100 px-6 py-4 hover:bg-ink-100"
+    >
+      <Star
+        aria-label={email.isStarred ? "Помечено" : undefined}
+        className={cn(
+          "mt-0.5 h-4 w-4 shrink-0",
+          email.isStarred ? "fill-accent text-accent" : "text-ink-300",
+        )}
+      />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-ink-900">{email.sender}</p>
-        <p className="truncate text-sm font-medium text-ink-900">{email.subject}</p>
-        <p className="truncate text-sm text-ink-500">{email.preview}</p>
+        <div className="flex items-baseline justify-between gap-3">
+          <p
+            className={cn(
+              "truncate text-sm text-ink-900",
+              email.isRead ? "font-medium" : "font-semibold",
+            )}
+          >
+            {email.fromName || email.fromEmail}
+          </p>
+          <span className="shrink-0 text-xs text-ink-500">
+            {formatShortDate(email.receivedAt)}
+          </span>
+        </div>
+        <p
+          className={cn(
+            "truncate text-sm text-ink-900",
+            email.isRead ? "font-normal" : "font-medium",
+          )}
+        >
+          {email.subject || "(без темы)"}
+        </p>
+        <p className="truncate text-sm text-ink-500">{email.snippet}</p>
       </div>
-    </div>
+      {!email.isRead && (
+        <span aria-label="Не прочитано" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-ink-900" />
+      )}
+    </a>
   );
 }
