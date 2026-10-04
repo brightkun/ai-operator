@@ -18,10 +18,21 @@ export const useGoogleStatus = () => {
   return useQuery({
     queryKey: STATUS_KEY,
     enabled: status === "authenticated",
-    queryFn: async () => {
+    queryFn: async (): Promise<GoogleStatus> => {
       const response = await api.get<GoogleStatus>("/integrations/google/status");
+      const data = response.data;
 
-      return response.data;
+      if (!data.connected) {
+        return data;
+      }
+
+      // Страховка от бэкенда старой версии (или запущенного до обновления кода): он отвечает
+      // без access/sync. Без этого страница падает; так — предложит переподключить Google.
+      return {
+        ...data,
+        access: data.access ?? { gmail: false, calendar: false, drive: false },
+        sync: data.sync ?? {},
+      };
     },
   });
 };
