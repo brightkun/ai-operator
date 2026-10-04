@@ -197,3 +197,17 @@ CREATE TABLE IF NOT EXISTS meeting_preps (
   generated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   PRIMARY KEY (user_id, event_id)
 );
+
+-- ---------------------------------------------------------------------------
+-- Недельный обзор (Weekly Review): выжимка от AI на 7 дней, заканчивающихся в week_end (локальная дата пользователя)
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS reviews (
+  user_id       INTEGER     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  week_end      DATE        NOT NULL,
+  summary       TEXT        NOT NULL,
+  sources       JSONB       NOT NULL DEFAULT '[]',
+  model         TEXT        NOT NULL DEFAULT '',
+  generated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, week_end)
+);
