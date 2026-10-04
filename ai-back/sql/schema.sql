@@ -178,3 +178,22 @@ CREATE TABLE IF NOT EXISTS usage_events (
 );
 
 CREATE INDEX IF NOT EXISTS usage_events_user_type_idx ON usage_events (user_id, type, created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Подготовка к встрече (Meeting Intelligence)
+-- ---------------------------------------------------------------------------
+
+-- участники из Google Calendar: [{ email, name, self, resource, response }]
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS attendees JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS organizer_email TEXT NOT NULL DEFAULT '';
+
+-- Текст подготовки: по одной на встречу (пересоздаётся по кнопке)
+CREATE TABLE IF NOT EXISTS meeting_preps (
+  user_id       INTEGER     NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  event_id      INTEGER     NOT NULL REFERENCES calendar_events (id) ON DELETE CASCADE,
+  summary       TEXT        NOT NULL,
+  sources       JSONB       NOT NULL DEFAULT '[]',
+  model         TEXT        NOT NULL DEFAULT '',
+  generated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, event_id)
+);

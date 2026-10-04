@@ -123,7 +123,7 @@ const clampLimit = (value: unknown) => {
 };
 
 // Грубое отсечение окончаний, чтобы «таблица» находила «таблицу», а «бюджета» — «бюджет»
-const stem = (word: string) =>
+export const stem = (word: string) =>
   word.length >= 6 ? word.slice(0, -2) : word.length === 5 ? word.slice(0, -1) : word;
 
 export const searchWords = (query: unknown) =>

@@ -83,6 +83,14 @@ export const mapGmailMessage = (
   };
 };
 
+export interface IAttendee {
+  email: string;
+  name: string;
+  self: boolean; // это сам пользователь
+  resource: boolean; // переговорка или другой ресурс, а не человек
+  response: string; // accepted | declined | tentative | needsAction
+}
+
 export interface IEventRow {
   googleEventId: string;
   title: string;
@@ -92,6 +100,8 @@ export interface IEventRow {
   endAt: Date;
   allDay: boolean;
   attendeesCount: number;
+  attendees: IAttendee[];
+  organizerEmail: string;
   htmlLink: string | null;
 }
 
@@ -121,6 +131,18 @@ export const mapCalendarEvent = (
     endAt: new Date(end),
     allDay,
     attendeesCount: event.attendees?.length ?? 0,
+    // у большой встречи участников сотни — храним первых 50: для подготовки этого достаточно
+    attendees: (event.attendees ?? [])
+      .filter((a) => a.email)
+      .slice(0, 50)
+      .map((a) => ({
+        email: String(a.email).toLowerCase(),
+        name: a.displayName ?? "",
+        self: Boolean(a.self),
+        resource: Boolean(a.resource) || /resource\.calendar\.google\.com$/i.test(a.email ?? ""),
+        response: a.responseStatus ?? "",
+      })),
+    organizerEmail: (event.organizer?.email ?? "").toLowerCase(),
     htmlLink: event.htmlLink ?? null,
   };
 };
@@ -199,13 +221,14 @@ export const saveEvents = async (
 ) => {
   for (const r of rows) {
     await pool.query(
-      `INSERT INTO calendar_events (user_id, google_event_id, title, description, location, start_at, end_at, all_day, attendees_count, html_link, synced_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+      `INSERT INTO calendar_events (user_id, google_event_id, title, description, location, start_at, end_at, all_day, attendees_count, attendees, organizer_email, html_link, synced_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, now())
        ON CONFLICT (user_id, google_event_id) DO UPDATE SET
          title = EXCLUDED.title, description = EXCLUDED.description,
          location = EXCLUDED.location, start_at = EXCLUDED.start_at,
          end_at = EXCLUDED.end_at, all_day = EXCLUDED.all_day,
-         attendees_count = EXCLUDED.attendees_count, html_link = EXCLUDED.html_link,
+         attendees_count = EXCLUDED.attendees_count, attendees = EXCLUDED.attendees,
+         organizer_email = EXCLUDED.organizer_email, html_link = EXCLUDED.html_link,
          synced_at = now()`,
       [
         userId,
@@ -217,6 +240,8 @@ export const saveEvents = async (
         r.endAt,
         r.allDay,
         r.attendeesCount,
+        JSON.stringify(r.attendees),
+        r.organizerEmail,
         r.htmlLink,
       ],
     );
