@@ -8,12 +8,18 @@ const icons: Record<Suggestion["icon"], LucideIcon> = {
   note: NotebookPen,
 };
 
-export function SuggestionCard({ suggestion }: { suggestion: Suggestion }) {
+interface SuggestionCardProps {
+  suggestion: Suggestion;
+  onPick: (text: string) => void;
+}
+
+export function SuggestionCard({ suggestion, onPick }: SuggestionCardProps) {
   const Icon = icons[suggestion.icon];
 
   return (
     <button
       type="button"
+      onClick={() => onPick(suggestion.description)}
       className="flex items-start gap-3 rounded-card border border-ink-300 bg-white p-4 text-left transition-colors hover:bg-ink-100"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-ink-100 text-ink-700">

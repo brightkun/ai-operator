@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/store/auth-store";
+import { useChatStore } from "@/store/chat-store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { api } from "../api/api";
@@ -17,6 +18,8 @@ export const useLogout = () => {
     onSettled: () => {
       clearAuth();
       queryClient.clear();
+      useChatStore.getState().reset(null); // переписка с ассистентом не должна пережить выход
+
       router.replace("/login");
     },
   });

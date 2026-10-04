@@ -423,6 +423,18 @@ export const extractSources = (answer: string, sources: Map<string, ISource>) =>
   return { answer: text.trim(), sources: used };
 };
 
+// После ошибки и повторной отправки в истории бывают две реплики пользователя подряд.
+// Часть провайдеров (в т.ч. Gemini) ждёт чередования ролей — склеиваем соседние реплики одной роли.
+export const mergeSameRole = (history: IHistoryMessage[]): IChatMessage[] => {
+  const merged: IChatMessage[] = [];
+  for (const m of history) {
+    const last = merged[merged.length - 1];
+    if (last && last.role === m.role) last.content = `${last.content}\n\n${m.content}`;
+    else merged.push({ role: m.role, content: m.content });
+  }
+  return merged;
+};
+
 export const assistantChatService = async (
   userId: number,
   history: IHistoryMessage[],
@@ -433,7 +445,7 @@ export const assistantChatService = async (
 
   const messages: IChatMessage[] = [
     { role: "system", content: buildSystemPrompt(new Date(), tz, connection) },
-    ...history.slice(-HISTORY_LIMIT).map((m) => ({ role: m.role, content: m.content })),
+    ...mergeSameRole(history.slice(-HISTORY_LIMIT)),
   ];
 
   const sources = new Map<string, ISource>();

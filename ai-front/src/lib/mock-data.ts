@@ -1,32 +1,32 @@
 import type { Note, Suggestion } from "@/lib/types";
 
-// Заглушки для разделов, у которых пока нет бэкенда: подсказки чата и заметки.
+// Подсказки для чата (description — текст, который уходит ассистенту) и заглушка заметок.
 // Gmail, Calendar и Drive берут данные с сервера (см. hooks/data/useData.ts).
 
 export const suggestions: Suggestion[] = [
   {
     id: "inbox-summary",
     icon: "inbox",
-    title: "Inbox summary",
-    description: "Summarize the most important emails in my inbox today",
+    title: "Что во входящих",
+    description: "Что важного во входящих? Выдели письма, которые требуют ответа",
   },
   {
     id: "todays-schedule",
     icon: "calendar",
-    title: "Today's schedule",
-    description: "What's on my calendar for today?",
+    title: "План на сегодня",
+    description: "Что у меня сегодня и завтра в календаре?",
   },
   {
     id: "find-file",
     icon: "folder",
-    title: "Find a file",
-    description: "Find the latest budget file in my Drive",
+    title: "Найти файл",
+    description: "Найди в Drive последние файлы с бюджетом",
   },
   {
-    id: "create-note",
+    id: "unread",
     icon: "note",
-    title: "Create a note",
-    description: "Create a note with today's meeting takeaways",
+    title: "Непрочитанное",
+    description: "Кратко перескажи непрочитанные письма",
   },
 ];
 
