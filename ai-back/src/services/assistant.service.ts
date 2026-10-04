@@ -450,10 +450,15 @@ export const assistantChatService = async (
 
   const sources = new Map<string, ISource>();
   let answer = "";
+  // Если основная модель перегружена и ответила запасная, остаток диалога продолжаем на ней же:
+  // подписи рассуждений в вызовах инструментов привязаны к модели, которая их выдала
+  let model: string | undefined;
 
   for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
     // на последнем круге инструменты не даём — модель обязана ответить текстом
-    const reply = await chatCompletion(messages, round < MAX_TOOL_ROUNDS ? TOOLS : []);
+    const result = await chatCompletion(messages, round < MAX_TOOL_ROUNDS ? TOOLS : [], model);
+    const reply = result.message;
+    model = result.model;
     messages.push(reply); // без изменений: служебные поля провайдера нужно вернуть как есть
 
     const calls = reply.tool_calls ?? [];
@@ -463,12 +468,12 @@ export const assistantChatService = async (
     }
 
     for (const call of calls) {
-      const result = await runTool(userId, call, tz, sources);
+      const toolResult = await runTool(userId, call, tz, sources);
       messages.push({
         role: "tool",
         tool_call_id: call.id,
         name: call.function?.name,
-        content: JSON.stringify(result),
+        content: JSON.stringify(toolResult),
       });
     }
   }
