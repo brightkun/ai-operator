@@ -10,6 +10,7 @@ import {
   FileText,
   LogOut,
   Plug,
+  CalendarCheck,
   ListChecks,
   Sunrise,
 } from "lucide-react";
@@ -66,6 +67,7 @@ export function Sidebar() {
         {[
           { href: "/brief", label: "Сводка дня", Icon: Sunrise },
           { href: "/tasks", label: "Задачи", Icon: ListChecks },
+          { href: "/review", label: "Недельный обзор", Icon: CalendarCheck },
         ].map(({ href, label, Icon }) => (
           <Link
             key={href}

@@ -138,6 +138,36 @@ export interface Brief {
   summary: BriefSummary | null;
 }
 
+// --- Недельный обзор ---
+
+export interface ReviewData {
+  weekStart: string;
+  weekEnd: string;
+  timeZone: string;
+  tasks: {
+    created: number;
+    createdFromEmail: number;
+    doneCount: number;
+    done: Task[];
+    openCount: number;
+    overdue: Task[];
+    staleWaiting: Task[];
+    dueNextWeek: Task[];
+  };
+  meetings: { count: number; hours: number; busiestDay: { date: string; count: number } | null };
+  emails: { received: number; sent: number; unread: number };
+  upcoming: { id: number; title: string; startAt: string; endAt: string; allDay: boolean; location: string }[];
+  ai: {
+    aiTasksDone: number;
+    draftsAccepted: number;
+    draftsGenerated: number;
+    emailSummaries: number;
+    meetingPreps: number;
+    aiActions: number;
+  };
+  summary: BriefSummary | null;
+}
+
 // --- Подготовка к встрече ---
 
 export interface MeetingAttendee {
