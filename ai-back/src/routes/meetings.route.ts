@@ -6,6 +6,7 @@ import {
   getMeetingController,
 } from "../controllers/meetings.controller";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { aiLimiter } from "../middlewares/rateLimit";
 import { validate } from "../middlewares/validate";
 import { timeZoneSchema } from "../validators/tasks.validator";
 
@@ -14,6 +15,6 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/:id", getMeetingController);
-router.post("/:id/prep", validate(timeZoneSchema), generateMeetingPrepController);
+router.post("/:id/prep", aiLimiter, validate(timeZoneSchema), generateMeetingPrepController);
 
 export default router;

@@ -8,6 +8,7 @@ import { GOOGLE_SCOPES, hasScope } from "../config/googleScopes";
 import { pool } from "../plugins/pg";
 import { apiErrors } from "../utils/apiErrors";
 import { generateOAuthState, verifyOAuthState } from "../utils/jwt";
+import { decryptSecret, encryptSecret } from "../utils/secrets";
 
 // Данные OAuth-клиента берутся из .env. Authorized redirect URI в Google Cloud Console
 // должен совпадать с googleRedirectUri (SERVER_URL + /api/integrations/google/callback) 1-в-1.
@@ -85,8 +86,8 @@ export const handleGoogleCallbackService = async (
      RETURNING *`,
     [
       userId,
-      tokens.access_token,
-      tokens.refresh_token || null,
+      encryptSecret(tokens.access_token ?? ""),
+      tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null,
       tokens.scope || null,
       tokens.expiry_date ? new Date(tokens.expiry_date) : null,
       data.email || null,
@@ -153,7 +154,7 @@ export const disconnectGoogleService = async (userId: number) => {
   }
 
   try {
-    await createOAuthClient().revokeToken(integration.access_token);
+    await createOAuthClient().revokeToken(decryptSecret(integration.access_token));
   } catch {
     // токен мог уже истечь/быть отозванным вручную в Google — это не мешает удалить запись
   }
@@ -187,8 +188,8 @@ export const getAuthorizedClient = async (userId: number) => {
 
   const oauth2Client = createOAuthClient();
   oauth2Client.setCredentials({
-    access_token: integration.access_token,
-    refresh_token: integration.refresh_token,
+    access_token: decryptSecret(integration.access_token),
+    refresh_token: integration.refresh_token ? decryptSecret(integration.refresh_token) : null,
     expiry_date: integration.token_expiry
       ? integration.token_expiry.getTime()
       : null,
@@ -200,7 +201,7 @@ export const getAuthorizedClient = async (userId: number) => {
         .query(
           `UPDATE integrations SET access_token = $1, token_expiry = $2 WHERE user_id = $3 AND provider = 'google'`,
           [
-            tokens.access_token,
+            encryptSecret(tokens.access_token),
             tokens.expiry_date ? new Date(tokens.expiry_date) : null,
             userId,
           ],

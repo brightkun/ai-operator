@@ -6,6 +6,7 @@ import {
   getReviewController,
 } from "../controllers/review.controller";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { aiLimiter } from "../middlewares/rateLimit";
 import { validate } from "../middlewares/validate";
 import { timeZoneSchema } from "../validators/tasks.validator";
 
@@ -14,6 +15,6 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", getReviewController);
-router.post("/summary", validate(timeZoneSchema), generateReviewSummaryController);
+router.post("/summary", aiLimiter, validate(timeZoneSchema), generateReviewSummaryController);
 
 export default router;

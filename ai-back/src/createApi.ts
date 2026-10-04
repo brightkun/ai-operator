@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import { config } from "./config/env";
 import { errorHandler } from "./middlewares/errorHandler";
+import { securityHeaders } from "./middlewares/securityHeaders";
 import assistantRoute from "./routes/assistant.route";
 import authRoute from "./routes/auth.route";
 import briefRoute from "./routes/brief.route";
@@ -16,6 +17,11 @@ import tasksRoute from "./routes/tasks.route";
 
 const createApi = () => {
   const app = express();
+
+  app.disable("x-powered-by");
+  // за обратным прокси (nginx, Render, Railway) IP клиента берётся из X-Forwarded-For: TRUST_PROXY=1 (число прокси)
+  if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+  app.use(securityHeaders);
 
   app.use(
     cors({

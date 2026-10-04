@@ -12,6 +12,7 @@ import {
   emailAssistController,
 } from "../controllers/emailAssist.controller";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { aiLimiter } from "../middlewares/rateLimit";
 import { validate } from "../middlewares/validate";
 import { clientEventSchema, emailAssistSchema } from "../validators/emailAssist.validator";
 
@@ -21,7 +22,7 @@ router.use(authMiddleware);
 
 router.post("/sync", syncController);
 router.get("/emails", emailsController);
-router.post("/emails/:id/assist", validate(emailAssistSchema), emailAssistController);
+router.post("/emails/:id/assist", aiLimiter, validate(emailAssistSchema), emailAssistController);
 router.post("/events", validate(clientEventSchema), clientEventController);
 router.get("/calendar/events", calendarEventsController);
 router.get("/drive/files", driveFilesController);

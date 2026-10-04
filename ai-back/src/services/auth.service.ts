@@ -13,6 +13,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt";
 import { sendResetPasswordEmail } from "../utils/mailer";
+import { hashToken } from "../utils/secrets";
 
 // Форма строки таблицы users (см. sql/users.sql)
 interface IUser {
@@ -44,8 +45,9 @@ const issueTokens = async (userId: number) => {
   const accessToken = generateAccessToken({ userId });
   const refreshToken = generateRefreshToken({ userId });
 
+  // в БД лежит только хэш: утечка таблицы не даёт готовых токенов сессий
   await pool.query(`UPDATE users SET refresh_token = $1 WHERE id = $2`, [
-    refreshToken,
+    hashToken(refreshToken),
     userId,
   ]);
 
@@ -128,7 +130,7 @@ export const refreshService = async (token: string | undefined) => {
 
   const result = await pool.query<IUser>(
     `SELECT * FROM users WHERE id = $1 AND refresh_token = $2`,
-    [payload.userId, token],
+    [payload.userId, hashToken(token)],
   );
   const user = result.rows[0];
 
@@ -256,9 +258,10 @@ export const forgotPasswordService = async (email: string) => {
 
   await pool.query(
     `UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3`,
-    [resetToken, resetTokenExpires, user.id],
+    [hashToken(resetToken), resetTokenExpires, user.id],
   );
 
+  // на почту уходит сам токен, в БД остаётся только его хэш
   await sendResetPasswordEmail(user.email, resetToken);
 };
 
@@ -271,7 +274,7 @@ export const resetPasswordService = async (
 ) => {
   const result = await pool.query<IUser>(
     `SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires > now()`,
-    [token],
+    [hashToken(token)],
   );
   const user = result.rows[0];
 
@@ -284,7 +287,8 @@ export const resetPasswordService = async (
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   await pool.query(
-    `UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2`,
+    // новый пароль — старые сессии больше не действуют
+    `UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL, refresh_token = NULL WHERE id = $2`,
     [hashedPassword, user.id],
   );
 };
