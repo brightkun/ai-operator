@@ -27,4 +27,13 @@ export const config = {
   googleRedirectUri: `${serverUrl}/api/integrations/google/callback`,
   // secure-кука работает только по https, поэтому включаем её в проде
   cookieSecure: process.env.NODE_ENV === "production",
+  // Любой OpenAI-совместимый chat completions API. По умолчанию — бесплатный тариф Gemini.
+  // Ключ (LLM_API_KEY) читается лениво в services/llm.ts: без него сервер стартует, не работает только чат.
+  llm: {
+    baseUrl: (
+      process.env.LLM_BASE_URL ||
+      "https://generativelanguage.googleapis.com/v1beta/openai"
+    ).replace(/\/+$/, ""),
+    model: process.env.LLM_MODEL || "gemini-3.8-flash",
+  },
 };

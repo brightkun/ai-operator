@@ -3,7 +3,7 @@
 import { pool } from "../plugins/pg";
 
 // % и _ в пользовательском поиске должны искаться как обычные символы, а не как маски LIKE
-const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
+export const escapeLike = (value: string) => value.replace(/[\\%_]/g, "\\$&");
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max);
